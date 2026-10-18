@@ -3,6 +3,7 @@ package com.example.fireplace4k
 
 import android.app.Activity
 import android.graphics.Color
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -18,6 +19,7 @@ class MainActivity : Activity() {
 
     private var player: ExoPlayer? = null
     private var playerView: PlayerView? = null
+    private var crackling: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,19 +54,38 @@ class MainActivity : Activity() {
         root.addView(playerView)
         setContentView(root)
 
-        val videoUri = Uri.parse("asset:///fireplace.mp4")
-
         player = ExoPlayer.Builder(this).build().also { exo ->
             playerView?.player = exo
-            exo.setMediaItem(MediaItem.fromUri(videoUri))
+            exo.setMediaItem(
+                MediaItem.fromUri(Uri.parse("asset:///fireplace.mp4"))
+            )
             exo.repeatMode = Player.REPEAT_MODE_ONE
             exo.playWhenReady = true
             exo.prepare()
+        }
+
+        try {
+            val descriptor = assets.openFd("fire_crackling.mp3")
+            crackling = MediaPlayer().apply {
+                setDataSource(
+                    descriptor.fileDescriptor,
+                    descriptor.startOffset,
+                    descriptor.length
+                )
+                isLooping = true
+                setVolume(0.8f, 0.8f)
+                prepare()
+                start()
+            }
+            descriptor.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     override fun onStop() {
         player?.pause()
+        crackling?.pause()
         super.onStop()
     }
 
@@ -72,6 +93,8 @@ class MainActivity : Activity() {
         playerView?.player = null
         player?.release()
         player = null
+        crackling?.release()
+        crackling = null
         super.onDestroy()
     }
 }
