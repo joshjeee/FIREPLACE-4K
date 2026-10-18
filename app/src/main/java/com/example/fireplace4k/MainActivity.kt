@@ -55,14 +55,23 @@ class MainActivity : Activity() {
         setContentView(root)
 
         player = ExoPlayer.Builder(this).build().also { exo ->
-            playerView?.player = exo
-            exo.setMediaItem(
-                MediaItem.fromUri(Uri.parse("asset:///fireplace.mp4"))
-            )
-            exo.repeatMode = Player.REPEAT_MODE_ONE
-            exo.playWhenReady = true
-            exo.prepare()
+    playerView?.player = exo
+
+    exo.addListener(object : Player.Listener {
+        override fun onRenderedFirstFrame() {
+            if (crackling?.isPlaying == false) {
+                crackling?.start()
+            }
         }
+    })
+
+    exo.setMediaItem(
+        MediaItem.fromUri(Uri.parse("asset:///fireplace.mp4"))
+    )
+    exo.repeatMode = Player.REPEAT_MODE_ONE
+    exo.playWhenReady = true
+    exo.prepare()
+}
 
         try {
             val descriptor = assets.openFd("fire_crackling.mp3")
@@ -75,7 +84,6 @@ class MainActivity : Activity() {
                 isLooping = true
                 setVolume(0.8f, 0.8f)
                 prepare()
-                start()
             }
             descriptor.close()
         } catch (e: Exception) {
